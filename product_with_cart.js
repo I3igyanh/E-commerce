@@ -1,33 +1,33 @@
-class EcommerceStore{
-    constructor(){
+class EcommerceStore {
+    constructor() {
         this.products = []
         this.carts = []
     }
 
-    addProduct(){
+    addProduct() {
         let product1 = {
-            id : Math.floor(Math.random()*1000000),
-            name : "Apple",
-            price : 100,
-            stock : 10,
-            unit : "kg"
+            id: Math.floor(Math.random() * 1000000),
+            name: "Apple",
+            price: 100,
+            stock: 10,
+            unit: "kg"
         }
         let product2 = {
-            id : Math.floor(Math.random()*1000000),
-            name : "Mango",
-            price : 300,
-            stock : 40,
-            unit : "kg"
+            id: Math.floor(Math.random() * 1000000),
+            name: "Mango",
+            price: 300,
+            stock: 40,
+            unit: "kg"
         }
         this.products.push(product1, product2)
         console.log("products: ", this.products)
         this.updateProductsUI()
     }
 
-    updateProductsUI(){
+    updateProductsUI() {
         let productsUIEle = document.getElementById("products")
         productsUIEle.innerHTML = this.products.map(
-            (product, index)=>{
+            (product, index) => {
                 return `<li key="${product.id}">
                     <h3>${product.name}</h3>
                     <b>${product.price} | ${product.unit}</b>
@@ -39,43 +39,43 @@ class EcommerceStore{
         ).join(" ")
     }
 
-    addToCart(productId){
+    addToCart(productId) {
         console.log("productId: ", productId)
         // finding matching product with productId
         let matchedProduct = this.products.find(
-            (p)=>{
+            (p) => {
                 return p.id == productId
             }
         )
         // finding quantity input element
-        let quantityIntpuEle = document.getElementById("quantity-"+matchedProduct.id)
+        let quantityIntpuEle = document.getElementById("quantity-" + matchedProduct.id)
         // validation of empty quanity
-        if(quantityIntpuEle.value === ""){
+        if (quantityIntpuEle.value === "") {
             alert("Please enter quantity")
             return;
         }
         // converting string quanity to integer
         let quantity = parseInt(quantityIntpuEle.value)
         // checking avability of stock
-        if(quantity > matchedProduct.stock){
+        if (quantity > matchedProduct.stock) {
             alert("Stock is not available")
             return;
         }
         // finding existing product cart
         let matchingCart = this.carts.find(
-            (cart)=>cart.productName == matchedProduct.name
+            (cart) => cart.productName == matchedProduct.name
         )
         // if matching cart exist then update the cart details
-        if(matchingCart){
+        if (matchingCart) {
             let totalQuantity = matchingCart.quantity + quantity
-            if(totalQuantity > matchedProduct.stock){
+            if (totalQuantity > matchedProduct.stock) {
                 alert("not enough stock")
                 return
             }
             matchingCart.quantity = totalQuantity
             let newUpdatedCarts = this.carts.map(
-                (cart, index)=>{
-                    if(cart.id == matchingCart.id){
+                (cart, index) => {
+                    if (cart.id == matchingCart.id) {
                         return matchingCart
                     }
                     return cart
@@ -87,12 +87,12 @@ class EcommerceStore{
             return;
         }
         let cartDetails = {
-            id : Math.floor(Math.random()*1000000),
-            productId : matchedProduct.id,
-            quantity : quantity,
-            productName : matchedProduct.name,
-            price : matchedProduct.price,
-            unit : matchedProduct.unit
+            id: Math.floor(Math.random() * 1000000),
+            productId: matchedProduct.id,
+            quantity: quantity,
+            productName: matchedProduct.name,
+            price: matchedProduct.price,
+            unit: matchedProduct.unit
         }
         this.carts.push(cartDetails)
         console.log("cart added : ", this.carts)
@@ -100,10 +100,10 @@ class EcommerceStore{
         this.displayCart()
     }
 
-    displayCart(){
+    displayCart() {
         let cartULEle = document.getElementById("carts")
         cartULEle.innerHTML = this.carts.map(
-            (cart, index)=>{
+            (cart, index) => {
                 return `<div key="${cart.id}" style="background-color:teal; color:white; padding: 10px; border-radius: 10px; margin: 10px; width: 250px;">
                     <h3>${cart.productName}</h3>
                     <b>${cart.price} | ${cart.unit}</b>
@@ -113,17 +113,78 @@ class EcommerceStore{
             }
         ).join(" ")
         let grantTotalEle = document.getElementById("grand-total")
-        grantTotalEle.innerText = "Grand Total: "+this.getGrandTotalFromCarts()
+        grantTotalEle.innerText = "Grand Total: " + this.getGrandTotalFromCarts()
     }
 
-    getGrandTotalFromCarts(){
+    getGrandTotalFromCarts() {
         let grandTotal = 0
         this.carts.forEach(
-            (cart)=>{
+            (cart) => {
                 grandTotal += cart.price * cart.quantity
             }
         )
         return grandTotal
+    }
+
+    payWithEsewa() {
+        if(this.carts.length===0){
+            alert("cart is empty")
+            return
+        }
+        //preparing transaction uuid
+        const secretKey = '8gBm/:&EnhH.1/q'
+        const totalAmountFromCarts = this.getGrandTotalFromCarts()
+        const nowDate = new Date()
+        const formattedTime = "E-" + nowDate.getHours() + nowDate.getMinutes() + nowDate.getSeconds() + nowDate.getMilliseconds()
+        const transactionUUID = formattedTime
+        //preparing amount
+        const taxAmount = 0;
+        const serviceCharge = 0;
+        const deliveryCharge = 0;
+        const toalAmount = totalAmountFromCarts + taxAmount + serviceCharge + deliveryCharge
+        //preparing signature
+        const productCode = "EPAYTEST"
+        const signedFieldNames = "total_amount,transaction_uuid,product_code"
+        const signatureString = `total_amount=${toalAmount},transaction_uuid=${transactionUUID},product_code=${productCode}`
+        var hash = CryptoJS.HmacSHA256(signatureString, secretKey);
+        var hashInBase64 = CryptoJS.enc.Base64.stringify(hash);
+        const signature = hashInBase64
+
+        //preparing succes and failure redirect link
+        let success_url = "http://http://127.0.0.1:5500/success.html"
+        let failure_url = "http://http://127.0.0.1:5500/failure.html"
+        //preparing data for esewa payment
+        const paymentData = {
+            amount: totalAmountFromCarts,
+            tax_amount:taxAmount,
+            total_amount:toalAmount,
+            transaction_uuid:transactionUUID,
+            product_code:productCode,
+            product_service_charge:serviceCharge,
+            product_delivery_charge:deliveryCharge,
+            success_url:"http://http://127.0.0.1:5500/success.html",
+            failure_url:"http://http://127.0.0.1:5500/failures.html",
+            signature:signature,
+            signed_field_names:signedFieldNames
+        }
+        //creating input field and appending to form elements
+        let form = document.createElement("form")
+        form.action = "https://rc-epay.esewa.com.np/api/epay/main/v2/form"
+        form.method = "POST"
+
+        Object.entries(paymentData).forEach(
+            ([key,value])=>{
+                let input = document.createElement("input")
+                input.hidden = true
+                input.name = key
+                input.value = value
+                form.appendChild(input)
+            }
+        )
+        //appending form in body element
+        document.body.appendChild(form)
+        //submitting form
+        form.submit()
     }
 }
 
